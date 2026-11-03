@@ -1,0 +1,50 @@
+{
+  "provider": "ollama",
+  "api": {
+    "ollama": {
+      "model": "llama3.1:8b"
+    },
+    "openai": {
+      "model": "",
+      "baseUrl": ""
+    },
+    "groq": {
+      "model": "",
+      "baseUrl": ""
+    },
+    "huggingface": {
+      "model": "",
+      "baseUrl": ""
+    },
+    "openrouter": {
+      "model": "",
+      "baseUrl": ""
+    },
+    "together": {
+      "model": "",
+      "baseUrl": ""
+    },
+    "deepseek": {
+      "model": "",
+      "baseUrl": ""
+    },
+    "mistral": {
+      "model": "",
+      "baseUrl": ""
+    },
+    "xai": {
+      "model": "",
+      "baseUrl": ""
+    },
+    "gemini": {
+      "model": "",
+      "baseUrl": ""
+    }
+  },
+  "exportFtbSnbt": true,
+  "minecraftVersion": "1.20.1",
+  "modLoader": "forge",
+  "instanceDir": "/tmp/test-instance-2",
+  "modCount": 18,
+  "requestTimeoutMs": 120000
+}

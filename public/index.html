@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0e1512" />
+<meta name="description" content="VFreeBuff — free AI-powered Minecraft modpack builder: Modrinth catalog, compatibility validation, manifest export and an own questbook system." />
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/icons/icon-192.png" />
+<link rel="stylesheet" href="/styles.css" />
+<title>VFreeBuff — Free AI Minecraft Modpack Builder</title>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="/icons/icon-192.png" alt="" width="36" height="36" />
+      <div>
+        <h1>VFreeBuff</h1>
+        <p>Free AI Modpack Builder · Modrinth catalog · Compat validation · Own questbook</p>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button id="catalogBtn" class="btn btn-ghost" type="button" title="Browse Modrinth mods for this pack target">🧭 Mods catalog</button>
+      <button id="questbookBtn" class="btn btn-ghost" type="button" title="The pack's own questbook">📖 Questbook</button>
+      <button id="configFixBtn" class="btn btn-ghost" type="button" title="AI config editing with preview & undo, crash diagnosis">⚙ Config & Fixes</button>
+      <span id="netStatus" class="pill pill-offline" title="Connection status">● offline</span>
+      <button id="installBtn" class="btn btn-ghost" type="button">Install app</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- ============ Left: configuration ============ -->
+    <section class="panel controls" aria-label="Configuration">
+      <details class="group" open>
+        <summary><span class="step-num">1</span> AI Provider & API Keys</summary>
+        <div class="group-body">
+          <label class="field">
+            <span>Provider</span>
+            <select id="provider"></select>
+            <small id="providerHint" class="hint"></small>
+          </label>
+
+          <label class="field">
+            <span id="apiKeyLabel">API key</span>
+            <span class="input-row">
+              <input type="password" id="apiKey" autocomplete="off" spellcheck="false" placeholder="…" />
+              <button type="button" class="btn btn-mini" data-reveal="apiKey">Show</button>
+            </span>
+            <small id="apiKeyHint" class="hint"></small>
+          </label>
+
+          <label class="field">
+            <span>Model</span>
+            <input type="text" id="apiModel" list="apiModels" spellcheck="false" />
+            <datalist id="apiModels"></datalist>
+          </label>
+
+          <details class="group nested">
+            <summary>Advanced — custom base URL</summary>
+            <div class="group-body">
+              <label class="field">
+                <span>OpenAI-compatible endpoint</span>
+                <input type="text" id="apiBaseUrl" spellcheck="false" placeholder="(provider default)" />
+                <small class="hint">Point at any OpenAI-compatible API — LM Studio, vLLM, LiteLLM, a corporate proxy… Leave empty for the provider default.</small>
+              </label>
+            </div>
+          </details>
+
+          <p class="hint">Keys are stored server-side in <code>config.json</code> (chmod 600) and never sent back to the browser.</p>
+        </div>
+      </details>
+
+      <details class="group" open>
+        <summary><span class="step-num">2</span> Target & Instance</summary>
+        <div class="group-body">
+          <div class="grid-2">
+            <label class="field">
+              <span>Minecraft version</span>
+              <input type="text" id="mcVersion" list="mcVersions" placeholder="1.20.1" spellcheck="false" />
+              <datalist id="mcVersions">
+                <option value="1.20.1"></option>
+                <option value="1.19.2"></option>
+                <option value="1.18.2"></option>
+                <option value="1.21.1"></option>
+                <option value="1.16.5"></option>
+              </datalist>
+            </label>
+            <label class="field">
+              <span>Mod loader</span>
+              <select id="modLoader">
+                <option value="forge">Forge</option>
+                <option value="fabric">Fabric</option>
+                <option value="neoforge">NeoForge</option>
+                <option value="quilt">Quilt</option>
+              </select>
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Prism Launcher instance directory</span>
+            <span class="input-row">
+              <input type="text" id="instanceDir" spellcheck="false"
+                     placeholder="/home/you/PrismLauncher/instances/MyPack/.minecraft" />
+              <button type="button" id="validateDirBtn" class="btn btn-mini">Check</button>
+            </span>
+            <small id="dirStatus" class="hint">Jars go to <code><dir>/mods</code>, quests to <code><dir>/config/ftbquests/quests/chapters/</code>.</small>
+          </label>
+
+          <label class="field">
+            <span>Target mod count (15–20)</span>
+            <input type="number" id="modCount" min="15" max="20" step="1" />
+          </label>
+
+          <label class="check-field">
+            <input type="checkbox" id="exportSnbt" />
+            <span>Also export FTB Quests <code>.snbt</code> files (optional — the app's own <code>questbook.json</code> + in-app questbook is the primary output)</span>
+          </label>
+        </div>
+      </details>
+
+      <details class="group" open>
+        <summary><span class="step-num">3</span> Theme prompt</summary>
+        <div class="group-body">
+          <label class="field">
+            <span>Describe the modpack you want</span>
+            <textarea id="prompt" rows="6"
+              placeholder="A lightweight automation modpack with mechanical engineering, custom cooking recipes, and a hardcore tech progression tree"></textarea>
+          </label>
+          <div class="chips" id="exampleChips">
+            <button type="button" class="chip">⚙️ Hardcore tech progression with Create & power generation</button>
+            <button type="button" class="chip">🍲 Cozy farming & cooking pack with seasons</button>
+            <button type="button" class="chip">⚔️ Dark fantasy adventure with dungeons and bosses</button>
+          </div>
+          <button type="button" id="saveBtn" class="btn btn-ghost btn-wide">Save settings</button>
+          <button type="button" id="generateBtn" class="btn btn-primary btn-wide">
+            <span class="btn-label">⚡ Generate Modpack & Quests</span>
+          </button>
+          <div id="phases" class="phases" aria-hidden="true">
+            <span class="phase" data-phase="init">queued</span>
+            <span class="phase" data-phase="mods">◈ AI mods</span>
+            <span class="phase" data-phase="download">⬇ Modrinth</span>
+            <span class="phase" data-phase="quests">📜 quests</span>
+            <span class="phase" data-phase="validate">🛡 validate</span>
+          </div>
+          <button type="button" id="previewBtn" class="btn btn-ghost btn-wide">🌲 Preview quest tree</button>
+        </div>
+      </details>
+
+      <div id="summary" class="summary hidden"></div>
+    </section>
+
+    <!-- ============ Right: terminal + result ============ -->
+    <section class="panel terminal-panel" aria-label="Terminal log">
+      <div class="terminal-head">
+        <span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span>
+        <span class="terminal-title">terminal — vfreebuff</span>
+        <span class="spacer"></span>
+        <button type="button" id="copyLogBtn" class="btn btn-mini">Copy</button>
+        <button type="button" id="clearLogBtn" class="btn btn-mini">Clear</button>
+      </div>
+      <div id="terminal" class="terminal" role="log" aria-live="polite" tabindex="0"></div>
+    </section>
+  </main>
+
+  <!-- ============ In-app questbook (own format, dependency-gated) ============ -->
+  <div id="questbookOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-label="Pack questbook">
+    <div class="overlay-box qb-box">
+      <div class="overlay-head">
+        <h3>📖 <span id="qbPackTitle">Questbook</span></h3>
+        <span id="qbMeta" class="hint"></span>
+        <button type="button" id="closeQuestbookBtn" class="btn btn-mini">✕ Close</button>
+      </div>
+      <div id="qbProgressWrap" class="qb-progress-wrap">
+        <div class="qb-progress-bar"><div id="qbProgressBar" class="qb-progress-fill"></div></div>
+        <span id="qbProgressText" class="hint"></span>
+      </div>
+      <div class="qb-layout">
+        <nav id="qbChapters" class="qb-chapters" aria-label="Chapters"></nav>
+        <div id="qbTree" class="preview-canvas qb-tree"></div>
+        <aside id="qbDetail" class="qb-detail">
+          <p class="hint">Select a quest to see its tasks and rewards.</p>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Quest-tree preview overlay (renders written .snbt) ============ -->
+  <div id="previewOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-label="Quest tree preview">
+    <div class="overlay-box">
+      <div class="overlay-head">
+        <h3>🌲 Quest tree — how FTB Quests will draw it</h3>
+        <button type="button" id="closePreviewBtn" class="btn btn-mini">✕ Close</button>
+      </div>
+      <p id="previewInfo" class="hint preview-info"></p>
+      <div id="previewTabs" class="chips preview-tabs"></div>
+      <div id="previewCanvas" class="preview-canvas"></div>
+    </div>
+  </div>
+
+  <!-- ============ Mods catalog (Modrinth, target-filtered) ============ -->
+  <div id="catalogOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-label="Mods catalog">
+    <div class="overlay-box cat-box">
+      <div class="overlay-head">
+        <h3>🧭 Mods catalog <span id="catTarget" class="hint"></span></h3>
+        <button type="button" id="closeCatalogBtn" class="btn btn-mini">✕ Close</button>
+      </div>
+      <div class="cat-search">
+        <input type="search" id="catQuery" placeholder="Search Modrinth — e.g. Create, minimap, farming" spellcheck="false" />
+        <select id="catSort" aria-label="Sort">
+          <option value="relevance">Relevance</option>
+          <option value="downloads">Downloads</option>
+          <option value="newest">Newest</option>
+          <option value="updated">Recently updated</option>
+        </select>
+        <button type="button" id="catSearchBtn" class="btn btn-primary btn-mini">Search</button>
+      </div>
+      <p id="catStatus" class="hint"></p>
+      <div id="catResults" class="cat-results"></div>
+      <div id="catPager" class="cat-pager"></div>
+    </div>
+  </div>
+
+  <div id="toasts" class="toasts" aria-live="assertive"></div>
+
+  <!-- ============ Config & Fixes (AI config edits + crash diagnosis) ============ -->
+  <div id="configFixOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-label="Config and fixes">
+    <div class="overlay-box cf-box">
+      <div class="overlay-head">
+        <h3>⚙ Config & Fixes</h3>
+        <span id="cfInstance" class="hint"></span>
+        <button type="button" id="closeConfigFixBtn" class="btn btn-mini">✕ Close</button>
+      </div>
+
+      <div class="chips cf-tabs">
+        <button type="button" class="chip active" data-cf-tab="configure">🛠 Configure</button>
+        <button type="button" class="chip" data-cf-tab="troubleshoot">🩺 Troubleshoot</button>
+      </div>
+
+      <!-- ---------- Configure tab ---------- -->
+      <div id="cfTabConfigure" class="cf-tab">
+        <div class="cf-grid">
+          <div class="cf-files-wrap">
+            <div class="cf-row">
+              <strong>Config files</strong>
+              <button type="button" id="cfRefreshBtn" class="btn btn-mini">↻ Refresh</button>
+            </div>
+            <p class="hint">Tick files to show the AI, or leave all unticked to let it pick by relevance. Only <code>config/</code> is ever editable — worlds and saves are out of reach.</p>
+            <div id="cfFiles" class="cf-files"></div>
+          </div>
+          <div class="cf-edit-wrap">
+            <label class="field">
+              <span>Describe the change in plain language</span>
+              <textarea id="cfInstruction" rows="4" placeholder="e.g. raise the hostile mob cap to 80, and make creepers blow up blocks again"></textarea>
+            </label>
+            <button type="button" id="cfProposeBtn" class="btn btn-primary btn-wide">✨ Propose changes <span class="hint">(preview only — nothing is written)</span></button>
+            <div id="cfProposal" class="cf-proposal"></div>
+          </div>
+        </div>
+        <div class="cf-backups">
+          <strong>Backups & undo</strong>
+          <div id="cfBackups" class="cf-backup-list"></div>
+        </div>
+      </div>
+
+      <!-- ---------- Troubleshoot tab ---------- -->
+      <div id="cfTabTroubleshoot" class="cf-tab hidden">
+        <label class="field">
+          <span>Paste a crash report or log</span>
+          <textarea id="cfLog" rows="9" spellcheck="false" placeholder="---- Minecraft Crash Report ----&#10;Time: …&#10;Description: …&#10;…"></textarea>
+        </label>
+        <button type="button" id="cfAnalyzeBtn" class="btn btn-primary btn-wide">🩺 Analyze crash</button>
+        <div id="cfResult" class="cf-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="foot">
+    VFreeBuff · Modrinth API (open metadata) · bring-your-own-key AI (or local Ollama) · own questbook system · PWA
+  </footer>
+
+  <script type="module" src="/app.js"></script>
+
+  <!-- PWA install prompt manager
+       - beforeinstallprompt fires once when the OS wants to install
+       - user click -> prompt() -> userChoice
+       - accepted removes the button; installed hides it permanently
+  -->
+  <script>
+    let deferredPrompt;
+    const installBtn = document.getElementById('installBtn');
+    if (installBtn) {
+      installBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+              console.log('User accepted the install prompt');
+            }
+            deferredPrompt = null;
+          });
+        }
+      });
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e.detail;
+        installBtn.classList.remove('hidden');
+      });
+      window.addEventListener('appinstalled', () => {
+        console.log('VFreeBuff was installed');
+        installBtn.classList.add('hidden');
+      });
+    }
+  </script>
+</body>
+</html>

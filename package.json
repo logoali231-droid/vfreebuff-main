@@ -1,0 +1,18 @@
+{
+  "name": "vfreebuff",
+  "version": "1.0.0",
+  "description": "VFreeBuff — free AI-powered Minecraft modpack builder PWA: Modrinth catalog, compatibility validation, modrinth.index.json manifest export and an own questbook system (bring-your-own-key AI or local Ollama)",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=18.17"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "node --test 'test/*.test.js' && node scripts/check-ids.js",
+    "icons": "node scripts/gen-icons.js",
+    "smoke:modrinth": "node scripts/smoke-modrinth.js",
+    "smoke:pipeline": "node scripts/smoke-pipeline.js"
+  },
+  "license": "MIT"
+}
